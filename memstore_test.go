@@ -1,6 +1,7 @@
 package memstore
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -43,6 +44,27 @@ func TestMemstoreBasicOps(t *testing.T) {
 	}
 }
 
+func TestMultiKeys(t *testing.T) {
+	store := NewIntMemstore()
+	expectedKeys := make([]ds.Key, 10)
+
+	makeKey := func(k int) ds.Key {
+		return ds.NewKey(fmt.Sprintf("key-%03d", k))
+	}
+
+	for k := 0; k < 10; k++ {
+		key := makeKey(k)
+		store.Put(key, k)
+		expectedKeys[k] = key
+	}
+
+	for k, key := range store.Keys() {
+		if expectedKey := makeKey(k); key != expectedKey {
+			t.Errorf("Got unexpected key: %v (expected %v)", key, expectedKey)
+		}
+	}
+}
+
 func TestQuery(t *testing.T) {
 	dataStore.Put(key, val)
 
@@ -52,7 +74,7 @@ func TestQuery(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
-	dataStore = NewIntMemstore(100)
+	dataStore = NewIntMemstore()
 
 	os.Exit(m.Run())
 }

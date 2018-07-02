@@ -25,12 +25,10 @@ func (store *IntMemstore) Put(key ds.Key, value interface{}) error {
 		return fmt.Errorf("Non-integer value detected: %v", value)
 	}
 
-	// _, exists := store.memMap[key]
-	// if exists {
-
-	// } else {
-	// 	store.keys
-	// }
+	_, exists := store.memMap[key]
+	if !exists {
+		store.keys = append(store.keys, key)
+	}
 
 	store.memMap[key] = castValue
 
@@ -59,12 +57,31 @@ func (store *IntMemstore) Has(key ds.Key) (bool, error) {
 	return err == nil, nil
 }
 
+// Keys list all currently stored Keys
+func (store *IntMemstore) Keys() []ds.Key {
+	store.mutex.Lock()
+	defer store.mutex.Unlock()
+
+	return store.keys
+}
+
 // Delete deletes stuff
 func (store *IntMemstore) Delete(key ds.Key) error {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
 
-	delete(store.memMap, key)
+	_, exists := store.memMap[key]
+
+	if exists {
+		for k := 0; k < len(store.keys); k++ {
+			if store.keys[k] == key {
+				store.keys = append(store.keys[:k], store.keys[k+1:]...)
+				break
+			}
+		}
+
+		delete(store.memMap, key)
+	}
 
 	return nil
 }
@@ -79,10 +96,10 @@ func (store *IntMemstore) Query(q query.Query) (query.Results, error) {
 }
 
 // NewIntMemstore creates new Integer Memstore
-func NewIntMemstore(capacity int) *IntMemstore {
+func NewIntMemstore() *IntMemstore {
 	return &IntMemstore{
 		sync.Mutex{},
-		make(map[ds.Key]int, capacity),
-		make([]ds.Key, capacity),
+		make(map[ds.Key]int),
+		make([]ds.Key, 0),
 	}
 }
