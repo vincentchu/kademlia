@@ -6,11 +6,16 @@ import (
 	"testing"
 
 	ds "github.com/ipfs/go-datastore"
+	"github.com/ipfs/go-datastore/query"
 )
 
 var dataStore ds.Datastore
 var key = ds.NewKey("foo")
 var val = 101
+
+func makeKey(k int) ds.Key {
+	return ds.NewKey(fmt.Sprintf("key-%03d", k))
+}
 
 func TestMemstoreBasicOps(t *testing.T) {
 	err := dataStore.Put(key, val)
@@ -48,10 +53,6 @@ func TestMultiKeys(t *testing.T) {
 	store := NewIntMemstore()
 	expectedKeys := make([]ds.Key, 10)
 
-	makeKey := func(k int) ds.Key {
-		return ds.NewKey(fmt.Sprintf("key-%03d", k))
-	}
-
 	for k := 0; k < 10; k++ {
 		key := makeKey(k)
 		store.Put(key, k)
@@ -66,11 +67,36 @@ func TestMultiKeys(t *testing.T) {
 }
 
 func TestQuery(t *testing.T) {
-	dataStore.Put(key, val)
+	for k := 0; k < 10; k++ {
+		dataStore.Put(makeKey(k), k)
+	}
 
-	// query.Query()
+	q := query.Query{
+		Prefix:   "",
+		Filters:  nil,
+		Orders:   nil,
+		Limit:    -1,
+		Offset:   -1,
+		KeysOnly: false,
+	}
 
-	// dataStore.Query()
+	results, err := dataStore.Query(q)
+	if err != nil {
+		t.Errorf("Unexpected err %v encountered with querying", err)
+	}
+
+	ctr := 0
+	for result := range results.Next() {
+		if keyStr := makeKey(ctr).String(); result.Key != keyStr {
+			t.Errorf("Unexpected key: %s (expected %s)", result.Key, keyStr)
+		}
+
+		if result.Value != ctr {
+			t.Errorf("Unexpe cted value: %d (expected %d)", result.Value, ctr)
+		}
+
+		ctr++
+	}
 }
 
 func TestMain(m *testing.M) {

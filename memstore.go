@@ -87,12 +87,22 @@ func (store *IntMemstore) Delete(key ds.Key) error {
 }
 
 // Query queries stuff
+//
+// For now, just return all results and can focus on the actual Query
+// logic a bit later
 func (store *IntMemstore) Query(q query.Query) (query.Results, error) {
-	// rb := query.NewResultBuilder(q)
-	// return rb.Results(), nil
+	store.mutex.Lock()
+	defer store.mutex.Unlock()
 
-	// return query.Results{}, nil
-	panic(1)
+	entries := make([]query.Entry, len(store.keys))
+	for idx, key := range store.keys {
+		entries[idx] = query.Entry{
+			Key:   key.String(),
+			Value: store.memMap[key],
+		}
+	}
+
+	return query.ResultsWithEntries(q, entries), nil
 }
 
 // NewIntMemstore creates new Integer Memstore
