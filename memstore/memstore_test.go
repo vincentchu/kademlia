@@ -92,7 +92,7 @@ func TestQuery(t *testing.T) {
 		}
 
 		if result.Value != ctr {
-			t.Errorf("Unexpe cted value: %d (expected %d)", result.Value, ctr)
+			t.Errorf("Unexpected value: %d (expected %d)", result.Value, ctr)
 		}
 
 		ctr++
