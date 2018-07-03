@@ -9,9 +9,8 @@ import (
 	"log"
 	"math/rand"
 
-	"./memstore"
-
 	"github.com/libp2p/go-libp2p"
+	dht "github.com/libp2p/go-libp2p-kad-dht"
 )
 
 func generateHost(ctx context.Context, port int64) host.Host {
@@ -40,7 +39,7 @@ func main() {
 	srcHost := generateHost(ctx, 3001)
 	fmt.Println(srcHost.ID().Pretty())
 
-	memstore.NewIntMemstore()
+	// dataStore := memstore.NewIntMemstore()
 
-	// dht.NewDHT(ctx, srcHost,a )
+	dht.NewDHT
 }
