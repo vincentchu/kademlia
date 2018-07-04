@@ -60,9 +60,15 @@ func addPeers(h host.Host, peerStr string) {
 	for i := 0; i < len(portStrs); i++ {
 		addr, err := addrForPort(portStrs[i])
 		dieIfError(err)
-		peerID := peer.ID(fmt.Sprintf("peer-%s", portStrs[i]))
+		pid := "QmcxsSTeHBEfaWBb2QKe5UZWK8ezWJkxJfmcb5rQV374M6" //peer.ID(fmt.Sprintf("QmcxsSTeHBEfaWBb2QKe5UZWK8ezWJkxJfmcb5rQV374M6", portStrs[i]))
+		peerid, err := peer.IDB58Decode(pid)
+		if err != nil {
+			fmt.Printf("Decode pid %v\n", err)
+		}
 
-		h.Peerstore().AddAddr(peerID, addr, 24*time.Hour)
+		h.Peerstore().AddAddr(peerid, addr, 24*time.Hour)
+		_, err = h.NewStream(context.Background(), peerid, "/multistream/1.0.0", "/ipfs/id/1.0.0", "/ipfs/kad/1.0.0", "/ipfs/dht")
+		fmt.Printf("Error on new stream: %v\n", err)
 	}
 }
 
@@ -74,12 +80,18 @@ func main() {
 	flag.Parse()
 
 	ctx := context.Background()
-	srvHost, _ := generateHost(ctx, *port)
+	srvHost, kad := generateHost(ctx, *port)
+	_ = kad
 
 	addPeers(srvHost, *peers)
 
 	fmt.Printf("Listening on %v\n", srvHost.Addrs())
 	fmt.Printf("Protocols supported: %v\n", srvHost.Mux().Protocols())
+
+	// pstore := srvHost.Peerstore().Addrs("peer-3001")
+	// fmt.Printf("Peers: %v\n", pstore)
+	// peerInfo, err := kad.FindPeer(ctx, "peer-3001")
+	// fmt.Printf("PeerInfo: %v - %v", peerInfo, err)
 
 	<-make(chan struct{})
 
