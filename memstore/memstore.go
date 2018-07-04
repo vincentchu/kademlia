@@ -65,6 +65,16 @@ func (store *IntMemstore) Keys() []ds.Key {
 	return store.keys
 }
 
+// Commit is a stubbed out commit
+func (store *IntMemstore) Commit() error {
+	return nil
+}
+
+// Batch returns underlying store to fake batching behavior
+func (store *IntMemstore) Batch() (ds.Batch, error) {
+	return store, nil
+}
+
 // Delete deletes stuff
 func (store *IntMemstore) Delete(key ds.Key) error {
 	store.mutex.Lock()
