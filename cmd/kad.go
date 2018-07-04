@@ -10,8 +10,10 @@ import (
 	"time"
 
 	dht "gx/ipfs/QmNg6M98bwS97SL9ArvrRxKujFps3eV6XvmKgduiYga8Bn/go-libp2p-kad-dht"
+	net "gx/ipfs/QmPjvxTpVH8qJyQDnxnsxF9kv9jezKD1kozz1hs3fCGsNh/go-libp2p-net"
 	multiaddr "gx/ipfs/QmYmsdtJ3HsodkePE3eU3TsCaP2YvPZJ4LoXnNkDE5Tpt7/go-multiaddr"
 	libp2p "gx/ipfs/QmZ86eLPtXkQ1Dfa992Q8NpXArUoWWh3y728JDcWvzRrvC/go-libp2p"
+	protocol "gx/ipfs/QmZNkThpqfVXs9GNbexPrfBbXSLNYeKrE7jwFM2oqHbyqN/go-libp2p-protocol"
 	host "gx/ipfs/Qmb8T6YBBsjYsVGfrihQLfCJveczZnneSBqBKkYEBWDjge/go-libp2p-host"
 	peer "gx/ipfs/QmdVrMn1LhB4ybb8hMVaMLXnA8XRSewMnK6YqXKXoTcRvN/go-libp2p-peer"
 	crypto "gx/ipfs/Qme1knMqwt1hKZbc1BmQFmnm9f36nyQGwXxPGVpVJ9rMK5/go-libp2p-crypto"
@@ -26,6 +28,21 @@ func dieIfError(err error) {
 func addrForPort(p string) (multiaddr.Multiaddr, error) {
 	return multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/tcp/%s", p))
 }
+
+func streamHandlerFor(name string, kad *dht.IpfsDHT) func(s net.Stream) {
+	fn := func(s net.Stream) {
+		conn := s.Conn()
+
+		log.Printf("Opened new stream %s: %v", name, s.Protocol())
+		log.Printf("  Local Addr:  %s", conn.LocalMultiaddr().String())
+		log.Printf("  Remote Addr: %s", conn.RemoteMultiaddr().String())
+		log.Printf("  Remote Peer: %s", conn.RemotePeer().Pretty())
+	}
+
+	return fn
+}
+
+var protocols = [4]string{"/multistream/1.0.0", "/ipfs/id/1.0.0", "/ipfs/kad/1.0.0", "/ipfs/dht"}
 
 func generateHost(ctx context.Context, port int64) (host.Host, *dht.IpfsDHT) {
 	randBytes := rand.New(rand.NewSource(port))
@@ -45,6 +62,10 @@ func generateHost(ctx context.Context, port int64) (host.Host, *dht.IpfsDHT) {
 
 	kadDHT, err := dht.New(ctx, host)
 	dieIfError(err)
+
+	for _, proto := range protocols {
+		host.SetStreamHandler(protocol.ID(proto), streamHandlerFor(proto, kadDHT))
+	}
 
 	fmt.Println("Generated host: ", host.ID().Pretty())
 
@@ -87,11 +108,6 @@ func main() {
 
 	fmt.Printf("Listening on %v\n", srvHost.Addrs())
 	fmt.Printf("Protocols supported: %v\n", srvHost.Mux().Protocols())
-
-	// pstore := srvHost.Peerstore().Addrs("peer-3001")
-	// fmt.Printf("Peers: %v\n", pstore)
-	// peerInfo, err := kad.FindPeer(ctx, "peer-3001")
-	// fmt.Printf("PeerInfo: %v - %v", peerInfo, err)
 
 	<-make(chan struct{})
 
