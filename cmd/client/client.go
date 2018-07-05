@@ -109,6 +109,8 @@ func main() {
 		log.Fatalf("Error creating DHT: %v\n", err)
 	}
 
+	kad.Update(ctx, destID)
+
 	cmd, key, val := parseCmd(flag.Args())
 	switch cmd {
 	case "put":
