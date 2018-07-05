@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"log"
-	"math/rand"
 
 	"github.com/vincentchu/kademlia/utils"
 
@@ -12,31 +11,12 @@ import (
 	dhtopts "gx/ipfs/QmNg6M98bwS97SL9ArvrRxKujFps3eV6XvmKgduiYga8Bn/go-libp2p-kad-dht/opts"
 	peerstore "gx/ipfs/QmZR2XWVVBCtbgBWnQhWk2xcQfaR3W8faQPriAiaaj7rsr/go-libp2p-peerstore"
 	host "gx/ipfs/Qmb8T6YBBsjYsVGfrihQLfCJveczZnneSBqBKkYEBWDjge/go-libp2p-host"
-	crypto "gx/ipfs/Qme1knMqwt1hKZbc1BmQFmnm9f36nyQGwXxPGVpVJ9rMK5/go-libp2p-crypto"
 
 	libp2p "github.com/libp2p/go-libp2p"
 )
 
-// NullValidator is a validator that does no valiadtion
-type NullValidator struct{}
-
-// Validate always returns success
-func (nv NullValidator) Validate(key string, value []byte) error {
-	log.Printf("NullValidator Validate: %s - %v\n", key, value)
-	return nil
-}
-
-// Select always selects the first record
-func (nv NullValidator) Select(key string, values [][]byte) (int, error) {
-	log.Printf("NullValidator Select: %s - %v\n", key, values)
-	log.Printf("NullValidator Select: %d", len(values))
-
-	return 0, nil
-}
-
 func makeHost(ctx context.Context) host.Host {
-	randBytes := rand.New(rand.NewSource(999))
-	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, randBytes)
+	prvKey := utils.GeneratePrivateKey(999)
 
 	h, err := libp2p.New(ctx, libp2p.Identity(prvKey))
 	if err != nil {
@@ -70,7 +50,7 @@ func main() {
 
 	h.Peerstore().AddAddr(destID, destAddr, peerstore.PermanentAddrTTL)
 
-	kad, err := dht.New(ctx, h, dhtopts.Client(true), dhtopts.Validator(NullValidator{}))
+	kad, err := dht.New(ctx, h, dhtopts.Client(true), dhtopts.Validator(utils.NullValidator{}))
 	if err != nil {
 		log.Fatalf("Error creating DHT: %v\n", err)
 	}

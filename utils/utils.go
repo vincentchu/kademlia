@@ -3,9 +3,11 @@ package utils
 import (
 	"fmt"
 	"log"
+	"math/rand"
 
 	multiaddr "gx/ipfs/QmYmsdtJ3HsodkePE3eU3TsCaP2YvPZJ4LoXnNkDE5Tpt7/go-multiaddr"
 	peer "gx/ipfs/QmdVrMn1LhB4ybb8hMVaMLXnA8XRSewMnK6YqXKXoTcRvN/go-libp2p-peer"
+	crypto "gx/ipfs/Qme1knMqwt1hKZbc1BmQFmnm9f36nyQGwXxPGVpVJ9rMK5/go-libp2p-crypto"
 )
 
 // MakePeer takes a fully-encapsulated address and converts it to a
@@ -36,4 +38,33 @@ func MakePeer(dest string) (peer.ID, multiaddr.Multiaddr) {
 	log.Printf("Decapsuated = %v\n", targetAddr)
 
 	return peerID, targetAddr
+}
+
+// NullValidator is a validator that does no valiadtion
+type NullValidator struct{}
+
+// Validate always returns success
+func (nv NullValidator) Validate(key string, value []byte) error {
+	log.Printf("NullValidator Validate: %s - %v\n", key, value)
+	return nil
+}
+
+// Select always selects the first record
+func (nv NullValidator) Select(key string, values [][]byte) (int, error) {
+	log.Printf("NullValidator Select: %s - %v\n", key, values)
+	log.Printf("NullValidator Select: %d", len(values))
+
+	return 0, nil
+}
+
+// GeneratePrivateKey - creates a private key with the given seed
+func GeneratePrivateKey(seed int64) crypto.PrivKey {
+	randBytes := rand.New(rand.NewSource(999))
+	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, randBytes)
+
+	if err != nil {
+		log.Fatalf("Could not generate Private Key: %v\n", err)
+	}
+
+	return prvKey
 }
