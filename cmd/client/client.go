@@ -8,6 +8,8 @@ import (
 	"math/rand"
 	// "time"
 
+	dht "gx/ipfs/QmNg6M98bwS97SL9ArvrRxKujFps3eV6XvmKgduiYga8Bn/go-libp2p-kad-dht"
+	dhtopts "gx/ipfs/QmNg6M98bwS97SL9ArvrRxKujFps3eV6XvmKgduiYga8Bn/go-libp2p-kad-dht/opts"
 	// net "gx/ipfs/QmPjvxTpVH8qJyQDnxnsxF9kv9jezKD1kozz1hs3fCGsNh/go-libp2p-net"
 	multiaddr "gx/ipfs/QmYmsdtJ3HsodkePE3eU3TsCaP2YvPZJ4LoXnNkDE5Tpt7/go-multiaddr"
 	// protocol "gx/ipfs/QmZNkThpqfVXs9GNbexPrfBbXSLNYeKrE7jwFM2oqHbyqN/go-libp2p-protocol"
@@ -20,6 +22,23 @@ import (
 	libp2p "github.com/libp2p/go-libp2p"
 	// record "gx/ipfs/QmVsp2KdPYE6M8ryzCk5KHLo3zprcY5hBDaYx6uPCFUdxA/go-libp2p-record"
 )
+
+// NullValidator is a validator that does no valiadtion
+type NullValidator struct{}
+
+// Validate always returns success
+func (nv NullValidator) Validate(key string, value []byte) error {
+	log.Printf("NullValidator Validate: %s - %v\n", key, value)
+	return nil
+}
+
+// Select always selects the first record
+func (nv NullValidator) Select(key string, values [][]byte) (int, error) {
+	log.Printf("NullValidator Select: %s - %v\n", key, values)
+	log.Printf("NullValidator Select: %d", len(values))
+
+	return 0, nil
+}
 
 func makeHost(ctx context.Context) host.Host {
 	randBytes := rand.New(rand.NewSource(999))
@@ -85,18 +104,28 @@ func main() {
 
 	h.Peerstore().AddAddr(destID, destAddr, peerstore.PermanentAddrTTL)
 
-	_, err := h.NewStream(ctx, destID, "/ipfs/kad/1.0.0")
+	kad, err := dht.New(ctx, h, dhtopts.Client(true), dhtopts.Validator(NullValidator{}))
 	if err != nil {
-		log.Fatalf("Error opening stream: %v\n", err)
+		log.Fatalf("Error creating DHT: %v\n", err)
 	}
 
 	cmd, key, val := parseCmd(flag.Args())
-
 	switch cmd {
 	case "put":
 		log.Printf("PUT %s => %s\n", key, val)
+		err = kad.PutValue(ctx, key, []byte(val), dht.Quorum(0))
+		if err != nil {
+			log.Fatalf("Error on PUT: %v\n", err)
+		}
+
 	case "get":
 		log.Printf("GET %s", key)
+		fetchedBytes, err := kad.GetValue(ctx, key, dht.Quorum(0))
+		if err != nil {
+			log.Fatalf("Error on GET: %v\n", err)
+		}
+		log.Printf("RESULT: %s\n", string(fetchedBytes))
+
 	default:
 		log.Fatalf("Command %s unrecognized\n", cmd)
 	}
