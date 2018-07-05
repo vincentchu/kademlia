@@ -14,6 +14,7 @@ import (
 	net "gx/ipfs/QmPjvxTpVH8qJyQDnxnsxF9kv9jezKD1kozz1hs3fCGsNh/go-libp2p-net"
 	multiaddr "gx/ipfs/QmYmsdtJ3HsodkePE3eU3TsCaP2YvPZJ4LoXnNkDE5Tpt7/go-multiaddr"
 	libp2p "gx/ipfs/QmZ86eLPtXkQ1Dfa992Q8NpXArUoWWh3y728JDcWvzRrvC/go-libp2p"
+	protocol "gx/ipfs/QmZNkThpqfVXs9GNbexPrfBbXSLNYeKrE7jwFM2oqHbyqN/go-libp2p-protocol"
 	peerstore "gx/ipfs/QmZR2XWVVBCtbgBWnQhWk2xcQfaR3W8faQPriAiaaj7rsr/go-libp2p-peerstore"
 	host "gx/ipfs/Qmb8T6YBBsjYsVGfrihQLfCJveczZnneSBqBKkYEBWDjge/go-libp2p-host"
 	// record "gx/ipfs/QmVsp2KdPYE6M8ryzCk5KHLo3zprcY5hBDaYx6uPCFUdxA/go-libp2p-record"
@@ -26,7 +27,7 @@ func dieIfError(err error) {
 }
 
 func addrForPort(p string) (multiaddr.Multiaddr, error) {
-	return multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/127.0.0.1/tcp/%s", p))
+	return multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/tcp/%s", p))
 }
 
 func streamHandlerFor(name string, h host.Host, kad *dht.IpfsDHT) func(s net.Stream) {
@@ -50,17 +51,17 @@ func streamHandlerFor(name string, h host.Host, kad *dht.IpfsDHT) func(s net.Str
 
 		log.Printf("Found peerinfo: %v, addrs: %v\n", peerInfo.ID, peerInfo.Addrs)
 
-		err = kad.PutValue(context.Background(), "/hello/KEY", []byte{1, 2, 3, 4, 5})
-		if err != nil {
-			log.Printf("Error on PutValue: %v\n", err)
-		}
+		// err = kad.PutValue(context.Background(), "/hello/KEY", []byte{1, 2, 3, 4, 5})
+		// if err != nil {
+		// 	log.Printf("Error on PutValue: %v\n", err)
+		// }
 
-		get, err := kad.GetValue(context.Background(), "/hello/KEY")
-		if err != nil {
-			log.Printf("Error when getting: %v\n", err)
-		}
+		// get, err := kad.GetValue(context.Background(), "/hello/KEY")
+		// if err != nil {
+		// 	log.Printf("Error when getting: %v\n", err)
+		// }
 
-		log.Printf("GET result: %v\n", get)
+		// log.Printf("GET result: %v\n", get)
 
 		// ch, err := kad.GetClosestPeers(context.Background(), "/hello/KEY")
 		// if err != nil {
@@ -81,6 +82,10 @@ func streamHandler(s net.Stream) {
 	fmt.Println("StreamHandler")
 }
 
+var protos = [4]string{
+	"/multistream/1.0.0", "/ipfs/id/1.0.0", "/ipfs/dht", "/ipfs/kad/1.0.0",
+}
+
 func generateHost(ctx context.Context, port int64) (host.Host, *dht.IpfsDHT) {
 	prvKey := utils.GeneratePrivateKey(port)
 	hostAddr, err := addrForPort(fmt.Sprintf("%d", port))
@@ -99,7 +104,12 @@ func generateHost(ctx context.Context, port int64) (host.Host, *dht.IpfsDHT) {
 
 	kadDHT, err := dht.New(ctx, host, dhtopts.Validator(utils.NullValidator{}))
 	dieIfError(err)
-	host.SetStreamHandler(dhtopts.ProtocolDHT, streamHandler)
+
+	for i := 0; i < 4; i++ {
+		host.SetStreamHandler(protocol.ID(protos[i]), streamHandlerFor(protos[i], host, kadDHT))
+	}
+	kadDHT.Update(ctx, host.ID())
+	// host.SetStreamHandler(dhtopts.ProtocolDHT, streamHandler)
 
 	ipfsAddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ipfs/%s", prettyHostID))
 	fullHostAddr := hostAddr.Encapsulate(ipfsAddr)

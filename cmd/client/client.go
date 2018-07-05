@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 
 	"github.com/vincentchu/kademlia/utils"
@@ -49,6 +50,9 @@ func main() {
 	destID, destAddr := utils.MakePeer(*dest)
 
 	h.Peerstore().AddAddr(destID, destAddr, peerstore.PermanentAddrTTL)
+	fmt.Println("opening new stream")
+	h.NewStream(ctx, destID, dhtopts.ProtocolDHT)
+	fmt.Println("done opening new stream")
 
 	kad, err := dht.New(ctx, h, dhtopts.Client(true), dhtopts.Validator(utils.NullValidator{}))
 	if err != nil {
@@ -61,7 +65,7 @@ func main() {
 	switch cmd {
 	case "put":
 		log.Printf("PUT %s => %s\n", key, val)
-		err = kad.PutValue(ctx, key, []byte(val), dht.Quorum(0))
+		err = kad.PutValue(ctx, key, []byte(val))
 		if err != nil {
 			log.Fatalf("Error on PUT: %v\n", err)
 		}
