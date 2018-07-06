@@ -45,7 +45,7 @@ func generateHost(ctx context.Context, port int64) (host.Host, *dht.IpfsDHT) {
 	kadDHT, err := dht.New(ctx, host, dhtopts.Validator(utils.NullValidator{}))
 	dieIfError(err)
 
-	fmt.Println("Generated host: ", host.ID().Pretty())
+	log.Printf("Generated Host: %s/ipfs/%s\n", host.Addrs()[0].String(), host.ID().Pretty())
 
 	return host, kadDHT
 }
@@ -72,7 +72,7 @@ func addPeers(h host.Host, peerStr string) {
 }
 
 func main() {
-	fmt.Println("Kademlia DHT test")
+	log.Println("Kademlia DHT test")
 
 	port := flag.Int64("port", 0, "Port to listen on")
 	_ = flag.String("peers", "", "Initial peers")
@@ -84,8 +84,8 @@ func main() {
 
 	// addPeers(srvHost, *peers)
 
-	fmt.Printf("Listening on %v\n", srvHost.Addrs())
-	fmt.Printf("Protocols supported: %v\n", srvHost.Mux().Protocols())
+	log.Printf("Listening on %v\n", srvHost.Addrs())
+	log.Printf("Protocols supported: %v\n", srvHost.Mux().Protocols())
 
 	<-make(chan struct{})
 }
