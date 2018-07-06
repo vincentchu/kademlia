@@ -59,7 +59,7 @@ func (nv NullValidator) Select(key string, values [][]byte) (int, error) {
 
 // GeneratePrivateKey - creates a private key with the given seed
 func GeneratePrivateKey(seed int64) crypto.PrivKey {
-	randBytes := rand.New(rand.NewSource(999))
+	randBytes := rand.New(rand.NewSource(seed))
 	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, randBytes)
 
 	if err != nil {
