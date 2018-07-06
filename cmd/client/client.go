@@ -3,22 +3,16 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log"
 	"time"
-	// "time"
+
+	"github.com/vincentchu/kademlia/utils"
 
 	dht "gx/ipfs/QmNg6M98bwS97SL9ArvrRxKujFps3eV6XvmKgduiYga8Bn/go-libp2p-kad-dht"
 	dhtopts "gx/ipfs/QmNg6M98bwS97SL9ArvrRxKujFps3eV6XvmKgduiYga8Bn/go-libp2p-kad-dht/opts"
-	// net "gx/ipfs/QmPjvxTpVH8qJyQDnxnsxF9kv9jezKD1kozz1hs3fCGsNh/go-libp2p-net"
-
-	// protocol "gx/ipfs/QmZNkThpqfVXs9GNbexPrfBbXSLNYeKrE7jwFM2oqHbyqN/go-libp2p-protocol"
-
 	host "gx/ipfs/Qmb8T6YBBsjYsVGfrihQLfCJveczZnneSBqBKkYEBWDjge/go-libp2p-host"
 
 	libp2p "github.com/libp2p/go-libp2p"
-	"github.com/vincentchu/kademlia/utils"
-	// record "gx/ipfs/QmVsp2KdPYE6M8ryzCk5KHLo3zprcY5hBDaYx6uPCFUdxA/go-libp2p-record"
 )
 
 func makeHost(ctx context.Context) host.Host {
@@ -59,9 +53,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error creating DHT: %v\n", err)
 	}
-
-	fmt.Println(destID.Pretty())
-	h.NewStream(ctx, destID, dhtopts.ProtocolDHT, dhtopts.ProtocolDHTOld)
 	kad.Update(ctx, destID)
 
 	cmd, key, val := parseCmd(flag.Args())
