@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"time"
 
 	"github.com/vincentchu/kademlia/utils"
 
@@ -14,8 +13,8 @@ import (
 	dhtopts "gx/ipfs/QmNg6M98bwS97SL9ArvrRxKujFps3eV6XvmKgduiYga8Bn/go-libp2p-kad-dht/opts"
 	multiaddr "gx/ipfs/QmYmsdtJ3HsodkePE3eU3TsCaP2YvPZJ4LoXnNkDE5Tpt7/go-multiaddr"
 	libp2p "gx/ipfs/QmZ86eLPtXkQ1Dfa992Q8NpXArUoWWh3y728JDcWvzRrvC/go-libp2p"
+	peerstore "gx/ipfs/QmZR2XWVVBCtbgBWnQhWk2xcQfaR3W8faQPriAiaaj7rsr/go-libp2p-peerstore"
 	host "gx/ipfs/Qmb8T6YBBsjYsVGfrihQLfCJveczZnneSBqBKkYEBWDjge/go-libp2p-host"
-	peer "gx/ipfs/QmdVrMn1LhB4ybb8hMVaMLXnA8XRSewMnK6YqXKXoTcRvN/go-libp2p-peer"
 )
 
 func dieIfError(err error) {
@@ -50,39 +49,31 @@ func generateHost(ctx context.Context, port int64) (host.Host, *dht.IpfsDHT) {
 	return host, kadDHT
 }
 
-func addPeers(h host.Host, peerStr string) {
-	if len(peerStr) == 0 {
+func addPeers(ctx context.Context, h host.Host, kad *dht.IpfsDHT, peersArg string) {
+	if len(peersArg) == 0 {
 		return
 	}
 
-	portStrs := strings.Split(peerStr, ",")
-	for i := 0; i < len(portStrs); i++ {
-		addr, err := addrForPort(portStrs[i])
-		dieIfError(err)
-		pid := "QmcxsSTeHBEfaWBb2QKe5UZWK8ezWJkxJfmcb5rQV374M6" //peer.ID(fmt.Sprintf("QmcxsSTeHBEfaWBb2QKe5UZWK8ezWJkxJfmcb5rQV374M6", portStrs[i]))
-		peerid, err := peer.IDB58Decode(pid)
-		if err != nil {
-			fmt.Printf("Decode pid %v\n", err)
-		}
+	peerStrs := strings.Split(peersArg, ",")
+	for i := 0; i < len(peerStrs); i++ {
+		peerID, peerAddr := utils.MakePeer(peerStrs[i])
 
-		h.Peerstore().AddAddr(peerid, addr, 24*time.Hour)
-		_, err = h.NewStream(context.Background(), peerid, "/multistream/1.0.0", "/ipfs/id/1.0.0", "/ipfs/kad/1.0.0", "/ipfs/dht")
-		fmt.Printf("Error on new stream: %v\n", err)
+		h.Peerstore().AddAddr(peerID, peerAddr, peerstore.PermanentAddrTTL)
+		kad.Update(ctx, peerID)
 	}
 }
 
 func main() {
 	log.Println("Kademlia DHT test")
 
-	port := flag.Int64("port", 0, "Port to listen on")
-	_ = flag.String("peers", "", "Initial peers")
+	port := flag.Int64("port", 3001, "Port to listen on")
+	peers := flag.String("peers", "", "Initial peers")
 	flag.Parse()
 
 	ctx := context.Background()
 	srvHost, kad := generateHost(ctx, *port)
-	_ = kad
 
-	// addPeers(srvHost, *peers)
+	addPeers(ctx, srvHost, kad, *peers)
 
 	log.Printf("Listening on %v\n", srvHost.Addrs())
 	log.Printf("Protocols supported: %v\n", srvHost.Mux().Protocols())
