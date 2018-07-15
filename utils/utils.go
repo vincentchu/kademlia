@@ -17,19 +17,19 @@ var log = logging.Logger("kadutils")
 func MakePeer(dest string) (peer.ID, multiaddr.Multiaddr) {
 	ipfsAddr, err := multiaddr.NewMultiaddr(dest)
 	if err != nil {
-		log.Fatalf("Err on creating host: %v\n", err)
+		log.Fatalf("Err on creating host: %v", err)
 	}
 	log.Debugf("Parsed: ipfsAddr = %s", ipfsAddr)
 
 	peerIDStr, err := ipfsAddr.ValueForProtocol(multiaddr.P_IPFS)
 	if err != nil {
-		log.Fatalf("Err on creating peerIDStr: %v\n", err)
+		log.Fatalf("Err on creating peerIDStr: %v", err)
 	}
 	log.Debugf("Parsed: PeerIDStr = %s", peerIDStr)
 
 	peerID, err := peer.IDB58Decode(peerIDStr)
 	if err != nil {
-		log.Fatalf("Err on decoding %s: %v\n", peerIDStr, err)
+		log.Fatalf("Err on decoding %s: %v", peerIDStr, err)
 	}
 	log.Debugf("Created peerID = %s", peerID)
 
@@ -47,7 +47,7 @@ type NullValidator struct{}
 
 // Validate always returns success
 func (nv NullValidator) Validate(key string, value []byte) error {
-	log.Debugf("NullValidator Validate: %s - %s\n", key, string(value))
+	log.Debugf("NullValidator Validate: %s - %s", key, string(value))
 	return nil
 }
 
@@ -57,7 +57,7 @@ func (nv NullValidator) Select(key string, values [][]byte) (int, error) {
 	for i := 0; i < len(values); i++ {
 		strs[i] = string(values[i])
 	}
-	log.Debugf("NullValidator Select: %s - %v\n", key, strs)
+	log.Debugf("NullValidator Select: %s - %v", key, strs)
 
 	return 0, nil
 }
@@ -68,7 +68,7 @@ func GeneratePrivateKey(seed int64) crypto.PrivKey {
 	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, randBytes)
 
 	if err != nil {
-		log.Fatalf("Could not generate Private Key: %v\n", err)
+		log.Fatalf("Could not generate Private Key: %v", err)
 	}
 
 	return prvKey

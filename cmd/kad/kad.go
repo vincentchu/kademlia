@@ -78,10 +78,8 @@ func main() {
 
 	ctx := context.Background()
 	srvHost, kad := generateHost(ctx, *port)
-
 	addPeers(ctx, srvHost, kad, *peers)
 
 	log.Infof("Listening on %v (Protocols: %v)", srvHost.Addrs(), srvHost.Mux().Protocols())
-
 	<-make(chan struct{})
 }
