@@ -4,7 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
+	"os"
 	"strings"
 
 	"github.com/vincentchu/kademlia/utils"
@@ -15,7 +15,11 @@ import (
 	libp2p "gx/ipfs/QmZ86eLPtXkQ1Dfa992Q8NpXArUoWWh3y728JDcWvzRrvC/go-libp2p"
 	peerstore "gx/ipfs/QmZR2XWVVBCtbgBWnQhWk2xcQfaR3W8faQPriAiaaj7rsr/go-libp2p-peerstore"
 	host "gx/ipfs/Qmb8T6YBBsjYsVGfrihQLfCJveczZnneSBqBKkYEBWDjge/go-libp2p-host"
+	logging "gx/ipfs/QmcVVHfdyv15GVPk7NrxdWjh2hLVccXnoD8j2tyQShiXJb/go-log"
+	logwriter "gx/ipfs/QmcVVHfdyv15GVPk7NrxdWjh2hLVccXnoD8j2tyQShiXJb/go-log/writer"
 )
+
+var log = logging.Logger("main")
 
 func addrForPort(p string) (multiaddr.Multiaddr, error) {
 	return multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/tcp/%s", p))
@@ -44,7 +48,8 @@ func generateHost(ctx context.Context, port int64) (host.Host, *dht.IpfsDHT) {
 		log.Fatal(err)
 	}
 
-	log.Printf("Generated Host: %s/ipfs/%s\n", host.Addrs()[0].String(), host.ID().Pretty())
+	hostID := host.ID()
+	log.Infof("Host MultiAddress: %s/ipfs/%s (%s)", host.Addrs()[0].String(), hostID.Pretty(), hostID.String())
 
 	return host, kadDHT
 }
@@ -64,7 +69,8 @@ func addPeers(ctx context.Context, h host.Host, kad *dht.IpfsDHT, peersArg strin
 }
 
 func main() {
-	log.Println("Kademlia DHT test")
+	logwriter.Configure(logwriter.Output(os.Stdout))
+	log.Info("Kademlia DHT test")
 
 	port := flag.Int64("port", 3001, "Port to listen on")
 	peers := flag.String("peers", "", "Initial peers")
@@ -75,8 +81,7 @@ func main() {
 
 	addPeers(ctx, srvHost, kad, *peers)
 
-	log.Printf("Listening on %v\n", srvHost.Addrs())
-	log.Printf("Protocols supported: %v\n", srvHost.Mux().Protocols())
+	log.Infof("Listening on %v (Protocols: %v)", srvHost.Addrs(), srvHost.Mux().Protocols())
 
 	<-make(chan struct{})
 }

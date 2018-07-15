@@ -2,13 +2,15 @@ package utils
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 
 	multiaddr "gx/ipfs/QmYmsdtJ3HsodkePE3eU3TsCaP2YvPZJ4LoXnNkDE5Tpt7/go-multiaddr"
+	logging "gx/ipfs/QmcVVHfdyv15GVPk7NrxdWjh2hLVccXnoD8j2tyQShiXJb/go-log"
 	peer "gx/ipfs/QmdVrMn1LhB4ybb8hMVaMLXnA8XRSewMnK6YqXKXoTcRvN/go-libp2p-peer"
 	crypto "gx/ipfs/Qme1knMqwt1hKZbc1BmQFmnm9f36nyQGwXxPGVpVJ9rMK5/go-libp2p-crypto"
 )
+
+var log = logging.Logger("kadutils")
 
 // MakePeer takes a fully-encapsulated address and converts it to a
 // peer ID / Multiaddress pair
@@ -17,25 +19,25 @@ func MakePeer(dest string) (peer.ID, multiaddr.Multiaddr) {
 	if err != nil {
 		log.Fatalf("Err on creating host: %v\n", err)
 	}
-	log.Printf("Parsed: ipfsAddr = %s\n", ipfsAddr)
+	log.Debugf("Parsed: ipfsAddr = %s", ipfsAddr)
 
 	peerIDStr, err := ipfsAddr.ValueForProtocol(multiaddr.P_IPFS)
 	if err != nil {
 		log.Fatalf("Err on creating peerIDStr: %v\n", err)
 	}
-	log.Printf("Parsed: PeerIDStr = %s\n", peerIDStr)
+	log.Debugf("Parsed: PeerIDStr = %s", peerIDStr)
 
 	peerID, err := peer.IDB58Decode(peerIDStr)
 	if err != nil {
 		log.Fatalf("Err on decoding %s: %v\n", peerIDStr, err)
 	}
-	log.Printf("Created peerID = %s\n", peerID)
+	log.Debugf("Created peerID = %s", peerID)
 
 	targetPeerAddr, err := multiaddr.NewMultiaddr(fmt.Sprintf("/ipfs/%s", peer.IDB58Encode(peerID)))
-	log.Printf("Created targetPeerAddr = %v\n", targetPeerAddr)
+	log.Debugf("Created targetPeerAddr = %v", targetPeerAddr)
 
 	targetAddr := ipfsAddr.Decapsulate(targetPeerAddr)
-	log.Printf("Decapsuated = %v\n", targetAddr)
+	log.Debugf("Decapsuated = %v", targetAddr)
 
 	return peerID, targetAddr
 }
@@ -45,7 +47,7 @@ type NullValidator struct{}
 
 // Validate always returns success
 func (nv NullValidator) Validate(key string, value []byte) error {
-	log.Printf("NullValidator Validate: %s - %s\n", key, string(value))
+	log.Debugf("NullValidator Validate: %s - %s\n", key, string(value))
 	return nil
 }
 
@@ -55,7 +57,7 @@ func (nv NullValidator) Select(key string, values [][]byte) (int, error) {
 	for i := 0; i < len(values); i++ {
 		strs[i] = string(values[i])
 	}
-	log.Printf("NullValidator Select: %s - %v\n", key, strs)
+	log.Debugf("NullValidator Select: %s - %v\n", key, strs)
 
 	return 0, nil
 }
