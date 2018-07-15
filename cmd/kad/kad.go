@@ -17,12 +17,6 @@ import (
 	host "gx/ipfs/Qmb8T6YBBsjYsVGfrihQLfCJveczZnneSBqBKkYEBWDjge/go-libp2p-host"
 )
 
-func dieIfError(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 func addrForPort(p string) (multiaddr.Multiaddr, error) {
 	return multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/tcp/%s", p))
 }
@@ -31,7 +25,9 @@ func generateHost(ctx context.Context, port int64) (host.Host, *dht.IpfsDHT) {
 	prvKey := utils.GeneratePrivateKey(port)
 
 	hostAddr, err := addrForPort(fmt.Sprintf("%d", port))
-	dieIfError(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	opts := []libp2p.Option{
 		libp2p.ListenAddrs(hostAddr),
@@ -39,10 +35,14 @@ func generateHost(ctx context.Context, port int64) (host.Host, *dht.IpfsDHT) {
 	}
 
 	host, err := libp2p.New(ctx, opts...)
-	dieIfError(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	kadDHT, err := dht.New(ctx, host, dhtopts.Validator(utils.NullValidator{}))
-	dieIfError(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	log.Printf("Generated Host: %s/ipfs/%s\n", host.Addrs()[0].String(), host.ID().Pretty())
 

@@ -45,14 +45,17 @@ type NullValidator struct{}
 
 // Validate always returns success
 func (nv NullValidator) Validate(key string, value []byte) error {
-	log.Printf("NullValidator Validate: %s - %v\n", key, value)
+	log.Printf("NullValidator Validate: %s - %s\n", key, string(value))
 	return nil
 }
 
 // Select always selects the first record
 func (nv NullValidator) Select(key string, values [][]byte) (int, error) {
-	log.Printf("NullValidator Select: %s - %v\n", key, values)
-	log.Printf("NullValidator Select: %d", len(values))
+	strs := make([]string, len(values))
+	for i := 0; i < len(values); i++ {
+		strs[i] = string(values[i])
+	}
+	log.Printf("NullValidator Select: %s - %v\n", key, strs)
 
 	return 0, nil
 }
